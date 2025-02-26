@@ -1,0 +1,21 @@
+{
+  "name": "playwright-workshop",
+  "version": "1.0.0",
+  "main": "./src/index.html",
+  "scripts": {
+    "test": "playwright test",
+    "test:ui": "playwright test --ui",
+    "serve": "npx http-server src"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@playwright/test": "^1.50.1",
+    "playwright": "^1.50.1"
+  },
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
+}
