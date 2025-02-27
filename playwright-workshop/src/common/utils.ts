@@ -1,3 +1,55 @@
+// import faker from '../../node_modules/faker';
+import { faker } from '@faker-js/faker';
+
+// export function genUser(){
+//   return  {
+//     name: faker.person.fullName(),
+//     email: faker.internet.email(),
+//     phone: faker.phone.number(),
+//     address: faker.location.streetAddress(),
+//   };
+// }
+
+export async function genUserName(): Promise<{ firstname: string; lastname: string; nickname: string; email: string} | undefined> {
+  try {
+    const response = await fetch('https://kidhaina.com/json/thainames.json');
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    return {
+      firstname: genFirstnameMale(data.firstnameMale),
+      lastname: genLastname(data.lastname),
+      nickname: genNicknameMale(data.nicknameMale),
+      email: faker.internet.email()
+    };
+  } catch (err) {
+    console.error('Error:', err);
+    return undefined;
+  }
+}
+
+type NameListModel = {
+  "th": string;
+  "en": string
+}
+
+function genFirstnameMale(names: NameListModel[]): string {
+  return names[Math.floor(Math.random() * names.length)].th;
+}
+
+function genLastname(names: NameListModel[]): string {
+  return names[Math.floor(Math.random() * names.length)].th;
+}
+
+function genNicknameMale(names: NameListModel[]): string {
+  return names[Math.floor(Math.random() * names.length)].th;
+}
+
+
+
 export function genCitizenId(): string {
   let result: string = "";
   let id12: string = "";

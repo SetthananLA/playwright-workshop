@@ -12,6 +12,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@faker-js/faker": "^9.5.0",
     "@playwright/test": "^1.50.1",
     "playwright": "^1.50.1"
   },

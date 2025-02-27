@@ -5,8 +5,13 @@ import {
   generateRandomAlpNumber,
   generateRandomLICNumber,
   getBirthDate,
-} from "./utils";
+  genUserName,
+} from "./common/utils";
 
+var sysDate = "";
+var firstname: string | undefined = "";
+var lastname: string | undefined = "";
+//login sec
 export async function playLoginSec(page, url): Promise<void> {
   await page.goto(url);
   // await page.locator("#txtUsername_txtText").click();
@@ -25,37 +30,40 @@ export async function playLoginSec(page, url): Promise<void> {
   await page.getByText("สำนักงานใหญ่").click();
 }
 
-export async function playLocalFrontEnd(page): Promise<void> {
-  await playFrontEndCustomer(page, "testLocal", "testtest2");
-}
-
-export async function playFrontEndCustomer(
-  page,
-  firstname,
-  lastname
-): Promise<void> {
-  await playFrontEndCustomerGeneralFill(page, firstname, lastname);
+//เปิดใบคำขอ
+export async function playFrontEndCustomer(page): Promise<void> {
+  await playFrontEndCustomerGeneralFill(page);
   await playFrontEndAddressFill(page);
   await playFrontEndTelFill(page);
   await playFrontEndAccountFill(page);
   await playFrontEndcareerFill(page);
   await playFrontEndcreditFill(page);
+  await nextToAsset(page);
+  await playFrontEndAssetAT05(page);
+  await playFrontEndCal(page);
+  await playFrontEndAdvance(page);
 }
 
-async function playFrontEndCustomerGeneralFill(
-  page,
-  firstname,
-  lastname
-): Promise<void> {
+async function playFrontEndCustomerGeneralFill(page): Promise<void> {
+  const user = await genUserName();
+  firstname = user?.firstname;
+  lastname = user?.lastname;
+  const nickname = user?.nickname;
+  const email = user?.email;
   await page
     .getByRole("listitem")
     .filter({ hasText: "ระบบงานสินเชื่อ" })
     .getByRole("img")
     .click();
 
-  await page.waitForTimeout(500);
-  await page.getByRole("link", { name: "ใบคำขอ" }).click();
-  await page.getByRole("link", { name: "เปิดใบคำขอ", exact: true }).click();
+  // await page.getByRole("link", { name: "ใบคำขอ" }).click();
+  const link1 = await page.getByRole("link", { name: "ใบคำขอ" });
+  await link1.waitFor();
+  await link1.click();
+  const link2 = await page.getByRole("link", { name: "เปิดใบคำขอ" });
+  await link2.waitFor();
+  await link2.click();
+  // await page.getByRole("link", { name: "เปิดใบคำขอ", exact: true }).click();
   await page.getByRole("link", { name: " เพิ่ม" }).click();
   await page
     .getByRole("textbox", { name: "ชื่อ", exact: true })
@@ -72,9 +80,9 @@ async function playFrontEndCustomerGeneralFill(
   await page.getByRole("textbox", { name: "นามสกุล" }).click();
   await page.getByRole("textbox", { name: "นามสกุล" }).fill(lastname);
   await page.getByRole("textbox", { name: "ชื่อเล่น" }).click();
-  await page.getByRole("textbox", { name: "ชื่อเล่น" }).fill("t");
+  await page.getByRole("textbox", { name: "ชื่อเล่น" }).fill(nickname);
   await page.getByLabel("สถานภาพสมรส").selectOption("SP01");
-  var sysDate = await page
+  sysDate = await page
     .locator("#dashboard-report-range.yellow-gold")
     .innerText();
   await page.locator("#BirthDate").click();
@@ -84,6 +92,9 @@ async function playFrontEndCustomerGeneralFill(
   await page.locator("#IssueDate").click();
   await page.getByRole("textbox", { name: "วันออกบัตร" }).click();
   await page.locator("#IssueDate").fill(getBirthDate(sysDate, 2));
+  await page.locator("#CustomerGroup").selectOption("001");
+  await page.locator("#ReligiousId").selectOption("RG01");
+  await page.locator("#Email").fill(email);
 
   await page
     .getByRole("textbox", { name: "บัตรประชาชน / หนังสือรับรอง" })
@@ -108,10 +119,32 @@ async function playFrontEndAddressFill(page): Promise<void> {
   await page.getByRole("treeitem", { name: "ที่อยู่ ภพ.20" }).click();
   await page.locator("#HouseNumber").click();
   await page.locator("#HouseNumber").fill("11/1");
+  await page.locator("#VillageNumber").fill("1");
+  await page.locator("#VillageName").fill("TestVillage");
+  await page.locator("#Floor").fill("-");
+  await page.locator("#RoomNumber").fill("-");
+  await page.locator("#Soi").fill("สุขสวัสดิ์ 40");
+  await page.locator("#Road").fill("สุขสวัสดิ์");
+
   await page.locator("#select2-SubDistrict-container").click();
   await page.locator('input[type="search"]').nth(1).fill("ราษ");
   // await page.getByRole('treeitem', { name: 'สำราญราษฎร์, พระนคร, กรุงเทพมหานคร' }).click();
-  await page.locator("role=treeitem >> nth=2").click();
+  await page.locator("role=treeitem >> nth=1").click();
+  await page.locator("#LivingStatus").selectOption("LS01");
+  await page
+    .getByRole("group", { name: "ข้อมูลที่อยู่" })
+    .getByLabel("-- กรุณาเลือก --")
+    .first()
+    .click();
+  // await page.getByRole('treeitem', { name: getBirthDate(sysDate, 33).split('/')[2] }).click();
+  await page
+    .locator('input[type="search"]')
+    .nth(1)
+    .fill(getBirthDate(sysDate, 33).split("/")[2]);
+  // await page.waitForSelector('[role="treeitem"][aria-label="2533"]');
+  await page
+    .getByRole("treeitem", { name: getBirthDate(sysDate, 33).split("/")[2] })
+    .click();
   await page.locator("#addressPanel").getByText("เพิ่ม").click();
 }
 
@@ -133,7 +166,7 @@ async function playFrontEndAccountFill(page): Promise<void> {
   await page.locator("#select2-BankCode-container").click();
   await page.getByRole("treeitem", { name: "(004" }).click();
   await page.locator("#select2-BankBranchCode-container").click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
   await page.getByRole("treeitem", { name: "(0002" }).click();
   await page.getByRole("textbox", { name: "หมายเลขบัญชี" }).click();
   await page
@@ -142,7 +175,7 @@ async function playFrontEndAccountFill(page): Promise<void> {
   await page.getByRole("textbox", { name: "ชื่อ-สกุล เจ้าของบัญชี" }).click();
   await page
     .getByRole("textbox", { name: "ชื่อ-สกุล เจ้าของบัญชี" })
-    .fill("test test");
+    .fill(`${firstname} ${lastname}`);
   await page.locator("#bankBookPanel").getByText("เพิ่ม").click();
 }
 
@@ -156,23 +189,35 @@ async function playFrontEndcareerFill(page): Promise<void> {
   await page.locator("role=treeitem >> nth=1").click();
   // await page.getByRole('treeitem', { name: 'สถาปนิก,วิศวกร' }).click();
   // await page.waitForSelector('.blockUI', { state: 'hidden', timeout: 60000 });
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
   await page
     .getByRole("group", { name: "ข้อมูลอาชีพ" })
     .getByLabel("-- กรุณาเลือก --")
     .first()
     .click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
   await page.locator("role=treeitem >> nth=3").click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
   await page.getByLabel("ประเภทธุรกิจของกิจการ").selectOption("0787500003");
   await page.getByRole("textbox", { name: "สถานที่ทำงาน" }).click();
   await page
     .getByRole("textbox", { name: "สถานที่ทำงาน" })
     .fill("test test company");
-  await page.locator("#Salary").click();
+  await page.locator("#DurationYear").click();
+  await page.locator("#DurationYear").fill("3");
+  await page.locator("#DurationMonth").click();
+  await page.locator("#DurationMonth").fill("7");
+  await page.locator("#Salary").fill("50000");
+
+  await page.locator("#OtherIncome").click();
+  await page.locator("#OtherIncome").fill("5000");
+  await page.locator("#OtherIncomeDescription").click();
+  await page.locator("#OtherIncomeDescription").fill("ขับGrabส่งอาหาร");
+  await page.locator("#OtherExpense").fill("12000");
+  await page.locator("#OtherExpenseDescription").click();
+  await page.locator("#OtherExpenseDescription").fill("ค่างวดบ้าน");
   await page.locator("#occupationPanel").getByText("เพิ่ม").click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
 }
 
 async function playFrontEndcreditFill(page): Promise<void> {
@@ -189,10 +234,11 @@ async function playFrontEndcreditFill(page): Promise<void> {
   await page.getByRole("textbox", { name: "วงเงินที่ใช้ได้" }).fill("500000");
   await page.locator("#CreditGroup").selectOption("1");
   await page.locator("#divCreditLine").getByText("เพิ่ม").click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
 }
 
-export async function nextToAsset(page): Promise<void> {
+//ไปหน้ากรอกข้อมูลสินทรัพย์
+async function nextToAsset(page): Promise<void> {
   await page.getByRole("button", { name: "ถัดไป " }).click();
   var isVisible = await page
     .getByText("ข้อมูลสมุดบัญชีเล่มนี้มีอยู่ในระบบแล้ว")
@@ -204,7 +250,8 @@ export async function nextToAsset(page): Promise<void> {
   await page.getByRole("button", { name: "ตกลง" }).click();
 }
 
-export async function playFrontEndAssetAT01(page): Promise<void> {
+//กรอก สินทรัพย์ ยานพาหะนะ
+async function playFrontEndAssetAT01(page): Promise<void> {
   await page.locator("#Asset_AssetType").selectOption("AT01");
   await page.locator("#select2-BrandName-container").click();
   await page.getByRole("treeitem", { name: "ปอร์เช่ | Porsche" }).click();
@@ -243,7 +290,7 @@ export async function playFrontEndAssetAT01(page): Promise<void> {
     .getByRole("textbox", { name: "วันที่เสียภาษี" })
     .fill("12/07/2566");
   await page.getByRole("textbox", { name: "วันที่เสียภาษี" }).press("Enter");
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
   await page.getByLabel("ประเภทเชื้อเพลิง").selectOption("GAS01");
   // คลิกที่ combobox เพื่อเปิด dropdown
   await page
@@ -273,7 +320,7 @@ export async function playFrontEndAssetAT01(page): Promise<void> {
   await page.getByRole("textbox", { name: "ขนาดเครื่องยนต์" }).press("Enter");
   await page.locator(".col-md-offset-5 > .btn > .fa").first().click();
   await page.getByRole("button", { name: "ตกลง" }).click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
 
   var saveVisible = await (
     await page.waitForSelector(".bootbox-body")
@@ -299,12 +346,12 @@ export async function playFrontEndAssetAT01(page): Promise<void> {
     .check();
 
   await page.getByRole("button", { name: "ถัดไป " }).click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
   await page.getByRole("button", { name: "ตกลง" }).click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
 }
-
-export async function playFrontEndAssetAT05(page): Promise<void> {
+//กรอก สินทรัพย์ มือถือ
+async function playFrontEndAssetAT05(page): Promise<void> {
   await page.locator("#Asset_AssetType").selectOption("AT05");
   await page.locator("#ProductType").selectOption("OT01");
   await page.locator("span.select2-selection").first().click();
@@ -317,7 +364,7 @@ export async function playFrontEndAssetAT05(page): Promise<void> {
   await page.locator("#ProductSizeId").selectOption("PS001");
   await page.locator("#ProductConditionId").selectOption("PC001");
   await page.locator("#MadeInId").selectOption("MI001");
-  await page.locator("#TotalPurchasePrice").fill("100000");
+  await page.locator("#TotalPurchasePrice").fill("39999");
   await page.locator("#PurchaseVatInOut").selectOption("VT01");
   await page.locator("#PurchaseWTHTax").check();
   // await page.locator("div.btn.blue[onclick='addAsset()']", { hasText: "เพิ่ม" }).click();
@@ -330,47 +377,31 @@ export async function playFrontEndAssetAT05(page): Promise<void> {
   await page.locator("td.asset-checkbox.checker").locator("input").check();
   // await page.waitForTimeout(500);
   // await page.getByRole("button", { name: "ตกลง" }).click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
   // await page.getByRole("button", { name: "OK" }).click();
   await page.getByRole("button", { name: "ถัดไป " }).click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
   await page.getByRole("button", { name: "ตกลง" }).click();
 }
-
-export async function playFrontEndCal(page): Promise<void> {
+//กรอกข้อมูลคำนวณยอด
+async function playFrontEndCal(page): Promise<void> {
   //เปิดใบคำขอกรอกข้อมูลสินทรัพย
   await page.locator("#select2-LoanProduct-container").first().click();
   await page
     .getByRole("treeitem", { name: /(โทรศัพท์ Tablet เครื่องใช้ไฟฟ้า อื่นๆ)/ })
     .click();
 
-  // await page.locator('#Principal_Loan').waitFor(); // รอให้ฟิลด์แสดงก่อน
-  // await page.locator('#Principal_Loan').fill('100000');
-
-  // await page.locator('#InterestRatePerMonth').waitFor(); // รอให้ฟิลด์แสดงก่อน
-  // await page.locator('#InterestRatePerMonth').fill('');
-  // await page.locator('#InterestRatePerMonth').type('0.000', { delay: 100 });
-  // await page.locator('#InterestRatePerMonth').click();
-
   await page.locator("#InterestRatePerYear").waitFor(); // รอให้ฟิลด์แสดงก่อน
   await page.locator("#InterestRatePerYear").click();
-  // await page.locator("#InterestRatePerYear").fill("2.000");
-  await page.locator("#InterestRatePerYear").type("2.000", { delay: 500 });
-  // await page.locator("#InterestRatePerYear").waitFor(); // รอให้ฟิลด์แสดงก่อน
-  // await page.locator("#InterestRatePerYear").click();
-  // await page.locator('#InterestRatePerYear_Simple').fill('7.0');
-
-  // await page.type('#InterestRatePerYear_Simple','7', { delay: 100 });
-
+  await page.locator("#InterestRatePerYear").type("2.000", { delay: 100 });
   await page.locator("#FlagDueEndOfMonthHp").check();
-
   await page.getByRole("button", { name: "คำนวณ" }).click();
   await page.locator("#goToMoreInfo").click();
-  await page.waitForTimeout(500);
+  // await page.waitForTimeout(500);
   await page.getByRole("button", { name: "ตกลง" }).click();
 }
-
-export async function playFrontEndAdvance(page): Promise<void> {
+//กรอกข้อมูลเพิ่มเติม
+async function playFrontEndAdvance(page): Promise<void> {
   await page.locator("#btnGuarantor").first().click();
   await page.locator("#CardId_Pop").fill("1");
   await page.locator("#btnSearchPopupCIF").first().click();
@@ -391,22 +422,19 @@ export async function playFrontEndAdvance(page): Promise<void> {
     .locator("#divPopDealerId")
     .getByRole("combobox", { name: "-- กรุณาเลือก --" })
     .click();
-  await page.getByRole("treeitem", { name: /ดีลเลอร์ประเทศไทย จำกัด/ }).click();
+  // await page.getByRole("treeitem", { name: /ดีลเลอร์ประเทศไทย จำกัด/ }).click();
+  await page.getByRole("treeitem").nth(2).click();
+
   await page
     .locator("#divPopSellerId")
     .getByRole("combobox", { name: "-- กรุณาเลือก --" })
     .click();
-  await page
-    .getByRole("treeitem", { name: /มาโนช ใจขำ/ })
-    .first()
-    .click();
+  await page.getByRole("treeitem").nth(2).click();
   await page
     .locator("#dealerForm #dvBankCode")
     .getByRole("combobox", { name: "-- กรุณาเลือก --" })
     .click();
-  await page
-    .getByRole("treeitem", { name: "ธนาคารกรุงเทพจำกัด(มหาชน)" })
-    .click();
+  await page.getByRole("treeitem").nth(2).click();
 
   await page.getByRole("combobox").filter({ hasText: /^$/ }).click();
   await page.locator('input[type="search"]').fill("หล");
@@ -417,8 +445,7 @@ export async function playFrontEndAdvance(page): Promise<void> {
     .getByRole("combobox", { name: "-- กรุณาเลือก --" })
     .first()
     .click();
-  await page.getByRole("treeitem", { name: /ณัฐพล มาเจริญ/ }).click();
-
+  await page.getByRole("treeitem").nth(2).click();
 
   await page.locator("#PaymentToDealerTypeID").selectOption("DT01");
   await page.locator("#PopPaymentChannelID").selectOption("CHE");
@@ -430,7 +457,7 @@ export async function playFrontEndAdvance(page): Promise<void> {
   // await page.locator('#PaymentChannel').selectOption('CSH');
   await page.locator("#Receive_Type_Id").selectOption("CSH");
   await page.locator("#chkSendUpTier").click();
-  await page.locator('#divRecommend #btnSaler').click();
+  await page.locator("#divRecommend #btnSaler").click();
   await page.locator("#CustomerTypeId_Pop").selectOption("CT1");
   await page.locator("#CardId_Pop").fill("1");
   await page.locator("#btnSearchPopupCIF").first().click();
@@ -456,33 +483,35 @@ export async function playFrontEndAdvance(page): Promise<void> {
 
   if (saveVisible) {
     await page.getByRole("button", { name: "ตกลง" }).click();
-    await page.waitForTimeout(500);
+    // await page.waitForTimeout(500);
   }
   await page.getByRole("button", { name: "OK" }).click();
   // await page.waitForTimeout(500);
   // await page.getByRole("button", { name: "บันทึก" }).click();
 }
 
-export async function playApprove(page,AppCode: String): Promise<void> {
-  await playChecker(page,AppCode);
-  await playApprover(page,AppCode);
-  await playOpenLoan(page,AppCode);
+//appove ใบคำขอ
+export async function playApprove(page, AppCode: String): Promise<void> {
+  await playChecker(page, AppCode);
+  await playApprover(page, AppCode);
+  await playOpenLoan(page, AppCode);
 }
 
-async function playChecker(page,AppCode: String): Promise<void> {
+async function playChecker(page, AppCode: String): Promise<void> {
   await page.getByRole("link", { name: "อนุมัติใบคำขอ", exact: true }).click();
   await page.locator("#AppCode").fill(AppCode);
   await page.locator("#btnSearch").click();
   await page.locator('a[title="พิจารณา"]').click();
 
   await page.locator("#line-step5").click();
-  await page.locator("#RemarkVerify").fill("อนุมัติ");
-  await page.locator("#VerifyTabCondition #uniform-002 span").click();
-  await page.locator("#btnSaveVerify").click();
+  await page.locator("#RemarkAnalyst").fill("อนุมัติ");
+  await page.getByRole("checkbox", { name: "ส่งพิจารณาอนุมัติ" }).check();
+  // await page.locator("#VerifyTabCondition #uniform-002 span").click();
+  await page.locator("#btnSaveAnalyst").click();
   await page.getByRole("button", { name: "ตกลง" }).click();
   await page.getByRole("button", { name: "ตกลง" }).click();
 }
-async function playApprover(page,AppCode: String): Promise<void> {
+async function playApprover(page, AppCode: String): Promise<void> {
   await page.locator("#AppCode").fill(AppCode);
   await page.locator("#btnSearch").click();
   await page.locator('button[title="พิจารณา"]').click();
@@ -494,13 +523,13 @@ async function playApprover(page,AppCode: String): Promise<void> {
   await page.getByRole("button", { name: "ตกลง" }).click();
   await page.getByRole("button", { name: "OK" }).click();
 }
-async function playOpenLoan(page,AppCode: String): Promise<void> {
-    await page.locator("#AppCode").fill(AppCode);
-    await page.locator('#StatusId').selectOption('AW');
-    await page.locator("#btnSearch").click();
-    await page.locator('a[title="เปิดสัญญา"]').click();
-    await page.locator("#line-step5").click();
-    await page.getByRole("button", { name: "เปิดสัญญา " }).click();
-    await page.getByRole("button", { name: "ตกลง" }).click();
-    await page.getByRole("button", { name: "OK" }).click();
+async function playOpenLoan(page, AppCode: String): Promise<void> {
+  await page.locator("#AppCode").fill(AppCode);
+  await page.locator("#StatusId").selectOption("AW");
+  await page.locator("#btnSearch").click();
+  await page.locator('a[title="เปิดสัญญา"]').click();
+  await page.locator("#line-step5").click();
+  await page.getByRole("button", { name: "เปิดสัญญา " }).click();
+  await page.getByRole("button", { name: "ตกลง" }).click();
+  await page.getByRole("button", { name: "OK" }).click();
 }
